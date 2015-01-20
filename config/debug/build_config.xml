@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- debug -->
+    <string name="umeng_app_key">1234567890123456</string>
+    <string name="umeng_app_channel">豌豆荚</string>
+    <string name="build_log">true</string>
+    
+</resources>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+    name="AntPackageDemo"
+    default="android_release" >
+
+    <property file="local.properties" />
+
+    <property file="ant_utf8.properties" />
+
+    <property environment="env" />
+
+    <!-- 暂时不用这个转码了，现在写到AntGenerateApk.bat中 -->
+
+    <property
+        name="native_props"
+        value="ant.properties" />
+
+    <property
+        name="ascii_props"
+        value="ant_ascii.properties" />
+
+    <target name="native2ascii" >
+
+        <delete file="${ascii_props}" />
+
+        <exec executable="native2ascii" >
+
+            <arg value="${native_props}" />
+
+            <arg value="${ascii_props}" />
+        </exec>
+
+        <property file="${ascii_props}" />
+    </target>
+
+    <!-- 声明ant loop ，这里直接用ant的循环功能 -->
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties" >
+
+        <classpath>
+
+            <pathelement location="${ant_lib}" />
+        </classpath>
+    </taskdef>
+
+    <condition
+        property="sdk.dir"
+        value="${env.ANDROID_HOME}" >
+
+        <isset property="env.ANDROID_HOME" />
+    </condition>
+
+    <tstamp prefix="build_time" >
+
+        <format
+            pattern="yyyyMMddHHmmss"
+            property="time" />
+    </tstamp>
+
+    <loadproperties srcFile="project.properties" />
+
+    <fail
+        message="sdk.dir is missing. "
+        unless="sdk.dir" />
+
+    <import
+        file="custom_rules.xml"
+        optional="true" />
+
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+
+    <target name="copy_files_release" >
+
+        <copy
+            file="${config.path}/release/build_config.xml"
+            overwrite="true"
+            tofile="./res/values/build_config.xml" />
+
+        <copy
+            file="${config.path}/release/project.properties"
+            overwrite="true"
+            tofile="./project.properties" />
+    </target>
+
+    <target name="copy_files_debug" >
+
+        <copy
+            file="${config.path}/debug/build_config.xml"
+            overwrite="true"
+            tofile="./res/values/build_config.xml" />
+
+        <copy
+            file="${config.path}/debug/project.properties"
+            overwrite="true"
+            tofile="./project.properties" />
+    </target>
+
+    <target name="replace_umeng_channel" >
+
+        <replaceregexp
+            byline="false"
+            encoding="utf-8"
+            flags="g" >
+
+            <regexp pattern="name=&quot;umeng_app_channel&quot;>(.*)&lt;/" />
+
+            <substitution expression="name=&quot;umeng_app_channel&quot;>${channel}&lt;/" />
+
+            <fileset
+                dir="./res/values/"
+                includes="build_config.xml" />
+        </replaceregexp>
+    </target>
+
+    <target name="replace_app_name" >
+
+        <property
+            name="target_app_name"
+            value="${ant.app.name}" />
+
+        <replaceregexp
+            byline="false"
+            encoding="utf-8"
+            flags="g" >
+
+            <regexp pattern="name=&quot;app_name&quot;>(.*)&lt;/" />
+
+            <substitution expression="name=&quot;app_name&quot;>${target_app_name}&lt;/" />
+
+            <fileset
+                dir="./res/values/"
+                includes="strings.xml" />
+        </replaceregexp>
+    </target>
+
+    <target name="android_build" >
+
+        <antcall target="replace_app_name" />
+
+        <antcall target="replace_umeng_channel" />
+
+        <antcall target="clean" />
+
+        <antcall target="release" />
+
+        <property
+            name="target_apk_name"
+            value="${ant.app.name}_${app_version}_${build.type}_${channel}.apk" />
+
+        <copy tofile="${out.target.path}/${app_version}/${target_apk_name}" >
+
+            <fileset
+                dir="${out.absolute.dir}/"
+                includes="${ant.project.name}-release.apk" />
+        </copy>
+
+        <echo message="proguard path. = ${proguard.path}" />
+
+        <condition property="existMapping" >
+
+            <available file="${proguard.path}/mapping.txt" />
+        </condition>
+
+        <antcall target="copy_proguard" />
+
+        <echo message="${target_apk_name} is ok." />
+    </target>
+
+    <target
+        name="copy_proguard"
+        if="existMapping" >
+
+        <copy tofile="${out.target.path}/${app_version}/proguard/mapping.txt" >
+
+            <fileset
+                dir="${proguard.path}/"
+                includes="mapping.txt" />
+        </copy>
+
+        <echo message="copy proguard file is ok." />
+    </target>
+
+    <target name="android_release" >
+
+        <foreach
+            delimiter=","
+            list="${channels}"
+            param="channel"
+            target="android_build" >
+        </foreach>
+    </target>
+
+    <target name="android_delete" >
+
+        <delete includeEmptyDirs="true" >
+
+            <fileset
+                dir="${out.absolute.dir}"
+                includes="**/*" />
+        </delete>
+    </target>
+
+    <target name="android_release_install_start" >
+
+        <antcall target="android_release" />
+
+        <antcall target="installr" />
+    </target>
+
+</project>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- release -->
+    <string name="umeng_app_key">547e9e99fd98c56599000679</string>
+    <string name="umeng_app_channel">site</string>
+    <string name="build_log">false</string>
+    
+</resources>
